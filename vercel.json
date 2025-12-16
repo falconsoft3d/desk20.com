@@ -1,15 +1,3 @@
 {
-  "buildCommand": "prisma generate && next build",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "EMAIL_SERVER_HOST": "@email_server_host",
-    "EMAIL_SERVER_PORT": "@email_server_port",
-    "EMAIL_SERVER_USER": "@email_server_user",
-    "EMAIL_SERVER_PASSWORD": "@email_server_password",
-    "EMAIL_FROM": "@email_from"
-  }
+  "buildCommand": "prisma generate && next build"
 }
