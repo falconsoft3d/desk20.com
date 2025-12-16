@@ -47,7 +47,8 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   session: {
-    strategy: 'jwt'
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 días por defecto
   },
   pages: {
     signIn: '/login',
@@ -66,6 +67,17 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string
       }
       return session
+    }
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
     }
   }
 }
