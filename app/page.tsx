@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Headphones, MessageSquare, BarChart3, Users, Shield, Zap } from 'lucide-react'
+import { Headphones, MessageSquare, BarChart3, Users, Shield, Zap, Github } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -13,6 +13,9 @@ export default function HomePage() {
               <span className="text-2xl font-bold text-gray-900">Desk20</span>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/contacto" className="text-gray-700 hover:text-gray-900">
+                Contacto
+              </Link>
               <Link href="/login" className="text-gray-700 hover:text-gray-900">
                 Iniciar Sesión
               </Link>
@@ -150,13 +153,58 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Open Source Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12 border border-gray-200">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              <div className="flex-shrink-0">
+                <div className="bg-gray-900 w-16 h-16 rounded-full flex items-center justify-center">
+                  <Github className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Proyecto de Código Abierto
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Desk20 es un proyecto open source. Contribuye, reporta bugs o simplemente explora el código en nuestro repositorio de GitHub.
+                </p>
+                <a 
+                  href="https://github.com/falconsoft3d/desk20.com" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-2 bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+                >
+                  <Github className="h-5 w-5" />
+                  <span>Ver en GitHub</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center space-x-2">
               <Headphones className="h-6 w-6 text-primary-600" />
               <span className="text-xl font-bold text-gray-900">Desk20</span>
+            </div>
+            <div className="flex items-center space-x-6">
+              <Link href="/contacto" className="text-gray-600 hover:text-gray-900">
+                Contacto
+              </Link>
+              <a 
+                href="https://github.com/falconsoft3d/desk20.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                GitHub
+              </a>
             </div>
             <p className="text-gray-600">© 2025 Desk20. Todos los derechos reservados.</p>
           </div>
