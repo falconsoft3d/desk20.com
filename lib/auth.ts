@@ -12,6 +12,8 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        // IMPORTANTE: El login NO debe verificar REGISTRATION_ENABLED
+        // Esta variable solo controla el REGISTRO de nuevos usuarios, no el acceso
         if (!credentials?.email || !credentials?.password) {
           return null
         }
