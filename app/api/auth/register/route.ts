@@ -4,6 +4,16 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
+    // Check if registration is enabled
+    const registrationEnabled = process.env.REGISTRATION_ENABLED === 'true'
+    
+    if (!registrationEnabled) {
+      return NextResponse.json(
+        { error: 'El registro de nuevos usuarios ha sido deshabilitado por el administrador' },
+        { status: 403 }
+      )
+    }
+
     const { name, email, password } = await request.json()
 
     // Validate input

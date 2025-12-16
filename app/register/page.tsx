@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Headphones } from 'lucide-react'
+import { Headphones, AlertCircle } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const [registrationEnabled, setRegistrationEnabled] = useState(true)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,6 +16,14 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    // Check if registration is enabled
+    fetch('/api/auth/register/status')
+      .then(res => res.json())
+      .then(data => setRegistrationEnabled(data.enabled))
+      .catch(() => setRegistrationEnabled(true))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,7 +76,30 @@ export default function RegisterPage() {
             Comienza con Desk20
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+        {!registrationEnabled ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div className="flex items-start">
+              <AlertCircle className="h-6 w-6 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                  Registro Deshabilitado
+                </h3>
+                <p className="text-sm text-yellow-700 mb-4">
+                  El registro de nuevos usuarios ha sido deshabilitado por el administrador. 
+                  Por favor, contacta al administrador del sistema para obtener acceso.
+                </p>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center text-sm font-medium text-yellow-800 hover:text-yellow-900"
+                >
+                  Volver al inicio de sesión →
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
@@ -148,6 +180,7 @@ export default function RegisterPage() {
             </Link>
           </div>
         </form>
+        )}
       </div>
     </div>
   )
