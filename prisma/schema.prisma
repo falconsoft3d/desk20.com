@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  users     User[]
+  tickets   Ticket[]
+}
+
+enum UserRole {
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  name               String?
+  password           String
+  avatar             String?
+  role               UserRole     @default(CUSTOMER)
+  phone              String?
+  location           String?
+  address            String?
+  publicToken        String?      @unique
+  emailNotifications Boolean      @default(true)
+  organizationId     String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  
+  organization      Organization?  @relation(fields: [organizationId], references: [id])
+  assignedTickets   Ticket[]       @relation("AssignedTickets")
+  createdTickets    Ticket[]       @relation("CreatedTickets")
+  messages          Message[]
+  interactions      Interaction[]
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  SOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Ticket {
+  id             String         @id @default(cuid())
+  number         Int            @unique @default(autoincrement())
+  subject        String
+  description    String?
+  status         TicketStatus   @default(OPEN)
+  priority       TicketPriority @default(NORMAL)
+  tags           String[]
+  attachments    String[]
+  customerId     String
+  assigneeId     String?
+  organizationId String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  customer       User           @relation("CreatedTickets", fields: [customerId], references: [id])
+  assignee       User?          @relation("AssignedTickets", fields: [assigneeId], references: [id])
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  messages       Message[]
+  interactions   Interaction[]
+}
+
+enum MessageType {
+  COMMENT
+  NOTE
+  EMAIL
+  WHATSAPP
+  SYSTEM
+}
+
+model Message {
+  id         String      @id @default(cuid())
+  content    String
+  type       MessageType @default(COMMENT)
+  isInternal Boolean     @default(false)
+  ticketId   String
+  authorId   String
+  attachments String[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  
+  ticket     Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author     User        @relation(fields: [authorId], references: [id])
+}
+
+enum InteractionType {
+  CONVERSATION
+  EMAIL_CHANGE
+  ORDER
+  ARTICLE_VIEW
+  RECEIPT
+}
+
+model Interaction {
+  id          String          @id @default(cuid())
+  type        InteractionType
+  title       String
+  description String?
+  metadata    Json?
+  userId      String
+  ticketId    String?
+  createdAt   DateTime        @default(now())
+  
+  user        User            @relation(fields: [userId], references: [id])
+  ticket      Ticket?         @relation(fields: [ticketId], references: [id])
+}
