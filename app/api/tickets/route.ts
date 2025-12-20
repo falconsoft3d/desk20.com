@@ -65,7 +65,10 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     const body = await request.json()
-    const { subject, description, priority, tags, customerId, attachments } = body
+    const { subject, description, priority, type, categoryId, hours, tags, customerId, attachments } = body
+
+    console.log('Session:', session)
+    console.log('CustomerId from body:', customerId)
 
     // Si no hay sesión pero hay customerId (desde formulario público)
     if (!session && !customerId) {
@@ -83,18 +86,58 @@ export async function POST(request: Request) {
     }
 
     // Usar customerId si se proporciona, sino usar el ID del usuario de la sesión
-    const finalCustomerId = customerId || session?.user.id
+    const finalCustomerId = customerId || session?.user?.id
+
+    console.log('Final customerId:', finalCustomerId)
+
+    if (!finalCustomerId) {
+      return NextResponse.json(
+        { error: 'No se pudo identificar al usuario' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar que el usuario existe
+    const userExists = await prisma.user.findUnique({
+      where: { id: finalCustomerId }
+    })
+
+    if (!userExists) {
+      console.error('Usuario no encontrado:', finalCustomerId)
+      return NextResponse.json(
+        { error: 'Usuario no encontrado en la base de datos' },
+        { status: 400 }
+      )
+    }
+
+    // Preparar los datos del ticket
+    const ticketData: any = {
+      subject,
+      description,
+      priority: priority || 'NORMAL',
+      tags: tags || [],
+      attachments: attachments || [],
+      customerId: finalCustomerId,
+      status: 'OPEN',
+    }
+
+    // Agregar campos opcionales solo si tienen valor
+    if (type && ['INCIDENT', 'CHANGE_REQUEST', 'PROJECT'].includes(type)) {
+      ticketData.type = type
+    }
+    
+    if (categoryId) {
+      ticketData.categoryId = categoryId
+    }
+    
+    if (hours !== null && hours !== undefined && hours !== '') {
+      ticketData.hours = parseFloat(hours)
+    }
+
+    console.log('Ticket data:', ticketData)
 
     const ticket = await prisma.ticket.create({
-      data: {
-        subject,
-        description,
-        priority: priority || 'NORMAL',
-        tags: tags || [],
-        attachments: attachments || [],
-        customerId: finalCustomerId,
-        status: 'OPEN',
-      },
+      data: ticketData,
       include: {
         customer: {
           select: {

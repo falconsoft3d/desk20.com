@@ -84,14 +84,6 @@ export async function PATCH(
     const data = await request.json()
     const { name, role, phone, location, password } = data
 
-    // Prevent users from changing their own role
-    if (params.id === session.user.id && role && role !== session.user.role) {
-      return NextResponse.json(
-        { error: 'No puedes cambiar tu propio rol' },
-        { status: 403 }
-      )
-    }
-
     const updateData: any = {
       name,
       role,

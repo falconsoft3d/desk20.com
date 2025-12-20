@@ -68,6 +68,12 @@ export default async function TicketsPage({
             avatar: true,
           }
         },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
         assignee: {
           select: {
             id: true,

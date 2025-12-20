@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut, 
   Headphones,
-  UserCircle 
+  UserCircle,
+  Tag
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -26,6 +27,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Tickets', href: '/dashboard/tickets', icon: MessageSquare },
+    { name: 'Categorías', href: '/dashboard/categories', icon: Tag },
     { name: 'Clientes', href: '/dashboard/customers', icon: Users },
     { name: 'Usuarios', href: '/dashboard/users', icon: Users },
   ]

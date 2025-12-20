@@ -144,16 +144,12 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                disabled={isCurrentUser}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="ADMIN">Administrador</option>
                 <option value="AGENT">Agente</option>
                 <option value="CUSTOMER">Cliente</option>
               </select>
-              {isCurrentUser && (
-                <p className="text-xs text-gray-500 mt-1">No puedes cambiar tu propio rol</p>
-              )}
             </div>
 
             <div>

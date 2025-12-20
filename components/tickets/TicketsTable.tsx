@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { TicketStatus, TicketPriority } from '@prisma/client'
+import { TicketStatus, TicketPriority, TicketType } from '@prisma/client'
 
 interface Ticket {
   id: string
@@ -11,6 +11,7 @@ interface Ticket {
   subject: string
   status: TicketStatus
   priority: TicketPriority
+  type: TicketType | null
   createdAt: Date
   updatedAt: Date
   customer: {
@@ -19,6 +20,10 @@ interface Ticket {
     email: string
     avatar: string | null
   }
+  category: {
+    id: string
+    name: string
+  } | null
   assignee: {
     id: string
     name: string | null
@@ -67,6 +72,12 @@ const priorityLabels = {
   URGENT: 'Urgente',
 }
 
+const typeLabels = {
+  INCIDENT: 'Incidente',
+  CHANGE_REQUEST: 'Solicitud de cambio',
+  PROJECT: 'Proyecto',
+}
+
 export default function TicketsTable({ tickets, agents, currentUserId }: TicketsTableProps) {
   const router = useRouter()
 
@@ -90,6 +101,12 @@ export default function TicketsTable({ tickets, agents, currentUserId }: Tickets
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Cliente
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tipo
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Categoría
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
@@ -137,6 +154,24 @@ export default function TicketsTable({ tickets, agents, currentUserId }: Tickets
                       <div className="text-sm text-gray-500">{ticket.customer.email}</div>
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {ticket.type ? (
+                    <span className="text-sm text-gray-900">
+                      {typeLabels[ticket.type]}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-400">-</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {ticket.category ? (
+                    <span className="text-sm text-gray-900">
+                      {ticket.category.name}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-400">-</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[ticket.status]}`}>

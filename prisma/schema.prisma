@@ -65,6 +65,12 @@ enum TicketPriority {
   URGENT
 }
 
+enum TicketType {
+  INCIDENT
+  CHANGE_REQUEST
+  PROJECT
+}
+
 model Ticket {
   id             String         @id @default(cuid())
   number         Int            @unique @default(autoincrement())
@@ -72,19 +78,32 @@ model Ticket {
   description    String?
   status         TicketStatus   @default(OPEN)
   priority       TicketPriority @default(NORMAL)
+  type           TicketType?
+  hours          Float?
   tags           String[]
   attachments    String[]
   customerId     String
   assigneeId     String?
+  categoryId     String?
   organizationId String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   
   customer       User           @relation("CreatedTickets", fields: [customerId], references: [id])
   assignee       User?          @relation("AssignedTickets", fields: [assigneeId], references: [id])
+  category       Category?      @relation(fields: [categoryId], references: [id])
   organization   Organization?  @relation(fields: [organizationId], references: [id])
   messages       Message[]
   interactions   Interaction[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
 }
 
 enum MessageType {

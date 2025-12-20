@@ -1,21 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, X, File } from 'lucide-react'
 import Link from 'next/link'
+
+interface Category {
+  id: string
+  name: string
+}
 
 export default function CreateTicketForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
     priority: 'NORMAL',
+    type: '',
+    categoryId: '',
+    hours: '',
     tags: '',
   })
   const [attachments, setAttachments] = useState<File[]>([])
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (error) {
+      console.error('Error al cargar categorías:', error)
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -63,6 +88,9 @@ export default function CreateTicketForm() {
         },
         body: JSON.stringify({
           ...formData,
+          type: formData.type || null,
+          categoryId: formData.categoryId || null,
+          hours: formData.hours ? parseFloat(formData.hours) : null,
           tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
           attachments: attachmentUrls
         }),
@@ -142,6 +170,55 @@ export default function CreateTicketForm() {
             <option value="HIGH">Alta</option>
             <option value="URGENT">Urgente</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Tipo
+          </label>
+          <select
+            value={formData.type}
+            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">Seleccionar tipo...</option>
+            <option value="INCIDENT">Incidente</option>
+            <option value="CHANGE_REQUEST">Solicitud de cambio</option>
+            <option value="PROJECT">Proyecto</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Categoría
+          </label>
+          <select
+            value={formData.categoryId}
+            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">Seleccionar categoría...</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Horas estimadas
+          </label>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            value={formData.hours}
+            onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Ej: 2.5"
+          />
         </div>
 
         <div>

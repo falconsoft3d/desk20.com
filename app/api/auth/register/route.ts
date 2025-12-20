@@ -39,23 +39,28 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
+    // Verificar si es el primer usuario (será admin)
+    const userCount = await prisma.user.count()
+    const role = userCount === 0 ? 'ADMIN' : 'CUSTOMER'
+
     // Create user
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: 'CUSTOMER',
+        role,
       }
     })
 
     return NextResponse.json(
       { 
-        message: 'Usuario creado exitosamente',
+        message: userCount === 0 ? 'Primer usuario creado como administrador' : 'Usuario creado exitosamente',
         user: {
           id: user.id,
           name: user.name,
           email: user.email,
+          role: user.role,
         }
       },
       { status: 201 }

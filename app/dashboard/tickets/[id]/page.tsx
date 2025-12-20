@@ -33,6 +33,12 @@ export default async function TicketDetailPage({
           createdAt: true,
         }
       },
+      category: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
       assignee: {
         select: {
           id: true,
