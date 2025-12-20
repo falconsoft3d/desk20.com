@@ -44,8 +44,18 @@ export default function TicketHeader({ ticket }: TicketHeaderProps) {
     // Fetch agents for assignment
     fetch('/api/users?role=AGENT,ADMIN')
       .then(res => res.json())
-      .then(data => setAgents(data))
-      .catch(err => console.error('Error fetching agents:', err))
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAgents(data)
+        } else {
+          console.error('Expected array of agents, got:', data)
+          setAgents([])
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching agents:', err)
+        setAgents([])
+      })
   }, [])
 
   const handleStatusChange = async (newStatus: TicketStatus) => {
@@ -134,7 +144,7 @@ export default function TicketHeader({ ticket }: TicketHeaderProps) {
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
             >
               <option value="">Sin asignar</option>
-              {agents.map(agent => (
+              {Array.isArray(agents) && agents.map(agent => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name || agent.email}
                 </option>

@@ -48,6 +48,20 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden actualizar categorías
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { name, email } = body
 
@@ -86,6 +100,20 @@ export async function DELETE(
     
     if (!session) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden eliminar categorías
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
     }
 
     await prisma.category.delete({

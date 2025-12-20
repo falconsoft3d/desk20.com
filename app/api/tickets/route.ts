@@ -15,15 +15,35 @@ export async function GET(request: Request) {
       )
     }
 
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { id: true, role: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const priority = searchParams.get('priority')
 
+    const whereClause: any = {
+      ...(status && { status: status as any }),
+      ...(priority && { priority: priority as any }),
+    }
+
+    // Si es CUSTOMER, solo puede ver sus propios tickets
+    if (user.role === 'CUSTOMER') {
+      whereClause.customerId = user.id
+    }
+
     const tickets = await prisma.ticket.findMany({
-      where: {
-        ...(status && { status: status as any }),
-        ...(priority && { priority: priority as any }),
-      },
+      where: whereClause,
       include: {
         customer: {
           select: {

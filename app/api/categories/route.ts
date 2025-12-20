@@ -12,6 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
+    // No restringimos el acceso aquí porque necesita estar disponible para los selects de formularios
     const categories = await prisma.category.findMany({
       orderBy: {
         createdAt: 'desc'
@@ -36,7 +37,19 @@ export async function POST(request: Request) {
     if (!session) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
 
+    // Solo AGENT y ADMIN pueden crear categorías
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
     const body = await request.json()
     const { name, email } = body
 

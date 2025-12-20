@@ -30,9 +30,15 @@ export default async function ProfilePage() {
     redirect('/login')
   }
 
+  // Filtrar contador según el rol
+  const countWhere = user.role === 'CUSTOMER' 
+    ? { status: 'OPEN' as const, customerId: user.id }
+    : { status: 'OPEN' as const }
+  const openTicketsCount = await prisma.ticket.count({ where: countWhere })
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar user={session?.user} />
+      <Sidebar user={user} openTicketsCount={openTicketsCount} />
       
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">

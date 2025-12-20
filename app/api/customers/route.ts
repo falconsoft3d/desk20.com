@@ -15,6 +15,20 @@ export async function POST(request: Request) {
       )
     }
 
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden crear customers
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     const { name, email, password, phone, location, address } = await request.json()
 
     if (!name || !email || !password) {
@@ -77,6 +91,20 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
+      )
+    }
+
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden ver customers
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
       )
     }
 

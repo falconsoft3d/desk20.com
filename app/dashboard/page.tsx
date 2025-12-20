@@ -8,10 +8,19 @@ import StatsCards from '@/components/dashboard/StatsCards'
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   
+  // Obtener usuario completo con su rol
+  const user = await prisma.user.findUnique({
+    where: { email: session?.user?.email || '' },
+    select: { id: true, name: true, email: true, role: true }
+  })
+
+  // Filtrar tickets según el rol
+  const ticketWhere = user?.role === 'CUSTOMER'
+    ? { status: 'OPEN' as const, customerId: user.id }
+    : { status: 'OPEN' as const }
+  
   const tickets = await prisma.ticket.findMany({
-    where: {
-      status: 'OPEN'
-    },
+    where: ticketWhere,
     include: {
       customer: {
         select: {
@@ -40,16 +49,19 @@ export default async function DashboardPage() {
     take: 3
   })
 
+  // Filtrar estadísticas según el rol
+  const statsWhere = user?.role === 'CUSTOMER' ? { customerId: user.id } : {}
+  
   const stats = await prisma.$transaction([
-    prisma.ticket.count({ where: { status: 'OPEN' } }),
-    prisma.ticket.count({ where: { status: 'PENDING' } }),
-    prisma.ticket.count({ where: { status: 'SOLVED' } }),
-    prisma.ticket.count(),
+    prisma.ticket.count({ where: { ...statsWhere, status: 'OPEN' } }),
+    prisma.ticket.count({ where: { ...statsWhere, status: 'PENDING' } }),
+    prisma.ticket.count({ where: { ...statsWhere, status: 'SOLVED' } }),
+    prisma.ticket.count({ where: statsWhere }),
   ])
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar user={session?.user} />
+      <Sidebar user={user || undefined} openTicketsCount={stats[0]} />
       
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">

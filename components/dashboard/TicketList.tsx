@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { TicketStatus, TicketPriority } from '@prisma/client'
@@ -63,6 +64,8 @@ const priorityLabels = {
 }
 
 export default function TicketList({ tickets, currentUserId }: TicketListProps) {
+  const router = useRouter()
+
   const handleAssign = async (ticketId: string) => {
     try {
       const res = await fetch(`/api/tickets/${ticketId}`, {
@@ -113,14 +116,15 @@ export default function TicketList({ tickets, currentUserId }: TicketListProps) 
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {tickets.map((ticket) => (
-              <tr key={ticket.id} className="hover:bg-gray-50">
+              <tr 
+                key={ticket.id} 
+                onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                className="hover:bg-gray-50 cursor-pointer"
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <Link 
-                    href={`/dashboard/tickets/${ticket.id}`}
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
+                  <div className="text-primary-600 font-medium">
                     #{ticket.number}
-                  </Link>
+                  </div>
                   <div className="text-sm text-gray-900 mt-1">{ticket.subject}</div>
                   <div className="text-xs text-gray-500 mt-1">
                     {ticket._count.messages} mensajes
@@ -158,7 +162,10 @@ export default function TicketList({ tickets, currentUserId }: TicketListProps) 
                     <span>{ticket.assignee.name || ticket.assignee.email}</span>
                   ) : (
                     <button
-                      onClick={() => handleAssign(ticket.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleAssign(ticket.id)
+                      }}
                       className="px-3 py-1 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-md transition"
                     >
                       Asignármelo

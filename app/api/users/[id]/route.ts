@@ -81,6 +81,20 @@ export async function PATCH(
       )
     }
 
+    // Obtener usuario con su rol
+    const currentUser = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo ADMIN puede editar usuarios
+    if (currentUser?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     const data = await request.json()
     const { name, role, phone, location, password } = data
 
@@ -139,8 +153,22 @@ export async function DELETE(
       )
     }
 
+    // Obtener usuario con su rol
+    const currentUser = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { id: true, role: true }
+    })
+
+    // Solo ADMIN puede eliminar usuarios
+    if (currentUser?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     // Prevent users from deleting themselves
-    if (params.id === session.user.id) {
+    if (params.id === currentUser.id) {
       return NextResponse.json(
         { error: 'No puedes eliminar tu propia cuenta' },
         { status: 403 }

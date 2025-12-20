@@ -17,6 +17,19 @@ export async function GET(
       )
     }
 
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { id: true, role: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
+      )
+    }
+
     const ticket = await prisma.ticket.findUnique({
       where: { id: params.id },
       include: {
@@ -60,6 +73,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Ticket no encontrado' },
         { status: 404 }
+      )
+    }
+
+    // Si es CUSTOMER, validar que solo pueda ver sus propios tickets
+    if (user.role === 'CUSTOMER' && ticket.customerId !== user.id) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 403 }
       )
     }
 

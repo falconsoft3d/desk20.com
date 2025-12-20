@@ -18,19 +18,27 @@ interface SidebarProps {
   user?: {
     name?: string | null
     email?: string
+    role?: string
   }
+  openTicketsCount?: number
 }
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user, openTicketsCount }: SidebarProps) {
   const pathname = usePathname()
+  const userRole = user?.role || 'CUSTOMER'
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Tickets', href: '/dashboard/tickets', icon: MessageSquare },
-    { name: 'Categorías', href: '/dashboard/categories', icon: Tag },
-    { name: 'Clientes', href: '/dashboard/customers', icon: Users },
-    { name: 'Usuarios', href: '/dashboard/users', icon: Users },
+  // Definir navegación según el rol
+  const allNavigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['CUSTOMER', 'AGENT', 'ADMIN'] },
+    { name: 'Tickets', href: '/dashboard/tickets', icon: MessageSquare, roles: ['CUSTOMER', 'AGENT', 'ADMIN'] },
+    { name: 'Categorías', href: '/dashboard/categories', icon: Tag, roles: ['AGENT', 'ADMIN'] },
+    { name: 'Clientes', href: '/dashboard/customers', icon: Users, roles: ['AGENT', 'ADMIN'] },
+    { name: 'Usuarios', href: '/dashboard/users', icon: Users, roles: ['ADMIN'] },
+    { name: 'Configuración', href: '/dashboard/settings', icon: Settings, roles: ['ADMIN'] },
   ]
+
+  // Filtrar navegación por rol
+  const navigation = allNavigation.filter(item => item.roles.includes(userRole))
 
   return (
     <div className="w-64 bg-white border-r flex flex-col">
@@ -45,18 +53,27 @@ export default function Sidebar({ user }: SidebarProps) {
         {navigation.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
+          const isTickets = item.href === '/dashboard/tickets'
+          
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+              className={`flex items-center justify-between px-4 py-3 rounded-lg transition ${
                 isActive
                   ? 'bg-primary-50 text-primary-700'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span className="font-medium">{item.name}</span>
+              <div className="flex items-center space-x-3">
+                <Icon className="h-5 w-5" />
+                <span className="font-medium">{item.name}</span>
+              </div>
+              {isTickets && openTicketsCount !== undefined && openTicketsCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                  {openTicketsCount}
+                </span>
+              )}
             </Link>
           )
         })}

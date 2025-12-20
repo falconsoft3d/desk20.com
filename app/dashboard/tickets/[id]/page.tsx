@@ -19,6 +19,16 @@ export default async function TicketDetailPage({
     redirect('/login')
   }
 
+  // Obtener usuario completo con su rol
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email || '' },
+    select: { id: true, name: true, email: true, role: true }
+  })
+
+  if (!user) {
+    redirect('/login')
+  }
+
   const ticket = await prisma.ticket.findUnique({
     where: { id: params.id },
     include: {
@@ -82,9 +92,20 @@ export default async function TicketDetailPage({
     notFound()
   }
 
+  // Si es CUSTOMER, validar que solo pueda ver sus propios tickets
+  if (user.role === 'CUSTOMER' && ticket.customerId !== user.id) {
+    redirect('/dashboard')
+  }
+
+  // Filtrar contador según el rol
+  const countWhere = user.role === 'CUSTOMER' 
+    ? { status: 'OPEN' as const, customerId: user.id }
+    : { status: 'OPEN' as const }
+  const openTicketsCount = await prisma.ticket.count({ where: countWhere })
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar user={session.user} />
+      <Sidebar user={user} openTicketsCount={openTicketsCount} />
       
       <main className="flex-1 flex overflow-hidden">
         {/* Main content area */}

@@ -15,6 +15,20 @@ export async function GET(request: Request) {
       )
     }
 
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo ADMIN puede acceder a este endpoint
+    if (user?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     // Get URL params for filtering
     const { searchParams } = new URL(request.url)
     const roleFilter = searchParams.get('role')
@@ -64,6 +78,20 @@ export async function POST(request: Request) {
       )
     }
 
+    // Obtener usuario con su rol
+    const currentUser = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo ADMIN puede crear usuarios
+    if (currentUser?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     const { name, email, password, role, phone, location } = await request.json()
 
     if (!name || !email || !password) {
@@ -89,7 +117,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Create user
-    const user = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         name,
         email,
@@ -106,7 +134,7 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json(user, { status: 201 })
+    return NextResponse.json(newUser, { status: 201 })
   } catch (error) {
     console.error('Error creating user:', error)
     return NextResponse.json(

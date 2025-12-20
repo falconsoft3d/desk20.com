@@ -14,7 +14,23 @@ export default async function CustomersPage() {
     redirect('/login')
   }
 
-  const [customers, stats] = await Promise.all([
+  // Obtener el usuario con su rol
+  const user = await prisma.user.findUnique({
+    where: { email: session.user?.email || '' },
+    select: { 
+      id: true, 
+      name: true, 
+      email: true, 
+      role: true,
+      avatar: true,
+    }
+  })
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const [customers, statsArray] = await Promise.all([
     prisma.user.findMany({
       where: {
         role: 'CUSTOMER'
@@ -54,12 +70,16 @@ export default async function CustomersPage() {
       prisma.user.count({ where: { role: 'CUSTOMER' } }),
       prisma.ticket.count({ where: { customer: { role: 'CUSTOMER' }, status: 'OPEN' } }),
       prisma.ticket.count({ where: { customer: { role: 'CUSTOMER' } } }),
+      prisma.ticket.count({ where: { status: 'OPEN' } })
     ])
   ])
 
+  const stats = statsArray
+  const openTicketsCount = statsArray[3]
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar user={session.user} />
+      <Sidebar user={user} openTicketsCount={openTicketsCount} />
       
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">

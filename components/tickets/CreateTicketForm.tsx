@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, X, File } from 'lucide-react'
+import { ArrowLeft, Upload, X, File, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 interface Category {
@@ -10,12 +10,28 @@ interface Category {
   name: string
 }
 
-export default function CreateTicketForm() {
+interface Customer {
+  id: string
+  name: string | null
+  email: string
+}
+
+interface CreateTicketFormProps {
+  currentUser: {
+    id: string
+    role: string
+  }
+}
+
+export default function CreateTicketForm({ currentUser }: CreateTicketFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [improvingText, setImprovingText] = useState(false)
   const [error, setError] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [formData, setFormData] = useState({
+    customerId: currentUser.role === 'CUSTOMER' ? currentUser.id : '',
     subject: '',
     description: '',
     priority: 'NORMAL',
@@ -28,6 +44,9 @@ export default function CreateTicketForm() {
 
   useEffect(() => {
     fetchCategories()
+    if (currentUser.role !== 'CUSTOMER') {
+      fetchCustomers()
+    }
   }, [])
 
   const fetchCategories = async () => {
@@ -39,6 +58,18 @@ export default function CreateTicketForm() {
       }
     } catch (error) {
       console.error('Error al cargar categorías:', error)
+    }
+  }
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await fetch('/api/customers')
+      if (response.ok) {
+        const data = await response.json()
+        setCustomers(data)
+      }
+    } catch (error) {
+      console.error('Error al cargar clientes:', error)
     }
   }
 
@@ -72,6 +103,42 @@ export default function CreateTicketForm() {
     return uploadedUrls
   }
 
+  const handleImproveText = async () => {
+    if (!formData.description.trim()) {
+      setError('Escribe una descripción primero')
+      return
+    }
+
+    setImprovingText(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/ai/improve-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: formData.description,
+          subject: formData.subject
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFormData({ ...formData, description: data.improvedText })
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Error al mejorar el texto')
+      }
+    } catch (error) {
+      console.error('Error improving text:', error)
+      setError('Error al mejorar el texto')
+    } finally {
+      setImprovingText(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -88,6 +155,7 @@ export default function CreateTicketForm() {
         },
         body: JSON.stringify({
           ...formData,
+          customerId: formData.customerId,
           type: formData.type || null,
           categoryId: formData.categoryId || null,
           hours: formData.hours ? parseFloat(formData.hours) : null,
@@ -129,6 +197,48 @@ export default function CreateTicketForm() {
           </div>
         )}
 
+        <div className="flex justify-end space-x-3 pb-4 border-b">
+          <Link
+            href="/dashboard/tickets"
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            Cancelar
+          </Link>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Creando...' : 'Crear Ticket'}
+          </button>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Cliente <span className="text-red-500">*</span>
+          </label>
+          <select
+            required
+            value={formData.customerId}
+            onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+            disabled={currentUser.role === 'CUSTOMER'}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            {currentUser.role === 'CUSTOMER' ? (
+              <option value={currentUser.id}>Mi cuenta</option>
+            ) : (
+              <>
+                <option value="">Seleccionar cliente...</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name || customer.email}
+                  </option>
+                ))}
+              </>
+            )}
+          </select>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Asunto <span className="text-red-500">*</span>
@@ -144,9 +254,20 @@ export default function CreateTicketForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Descripción
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Descripción
+            </label>
+            <button
+              type="button"
+              onClick={handleImproveText}
+              disabled={improvingText || !formData.description.trim()}
+              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              {improvingText ? 'Mejorando...' : 'Mejorar con IA'}
+            </button>
+          </div>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -154,71 +275,78 @@ export default function CreateTicketForm() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             placeholder="Proporciona más detalles sobre el problema"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Usa el botón "Mejorar con IA" para obtener una descripción más clara y profesional
+          </p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Prioridad
-          </label>
-          <select
-            value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="LOW">Baja</option>
-            <option value="NORMAL">Normal</option>
-            <option value="HIGH">Alta</option>
-            <option value="URGENT">Urgente</option>
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Prioridad
+            </label>
+            <select
+              value={formData.priority}
+              onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="LOW">Baja</option>
+              <option value="NORMAL">Normal</option>
+              <option value="HIGH">Alta</option>
+              <option value="URGENT">Urgente</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tipo
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Seleccionar tipo...</option>
+              <option value="INCIDENT">Incidente</option>
+              <option value="CHANGE_REQUEST">Solicitud de cambio</option>
+              <option value="PROJECT">Proyecto</option>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tipo
-          </label>
-          <select
-            value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Seleccionar tipo...</option>
-            <option value="INCIDENT">Incidente</option>
-            <option value="CHANGE_REQUEST">Solicitud de cambio</option>
-            <option value="PROJECT">Proyecto</option>
-          </select>
-        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Categoría
+            </label>
+            <select
+              value={formData.categoryId}
+              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Seleccionar categoría...</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Categoría
-          </label>
-          <select
-            value={formData.categoryId}
-            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Seleccionar categoría...</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Horas estimadas
-          </label>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            value={formData.hours}
-            onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Ej: 2.5"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Horas estimadas
+            </label>
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              value={formData.hours}
+              onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Ej: 2.5"
+            />
+          </div>
         </div>
 
         <div>
@@ -295,22 +423,6 @@ export default function CreateTicketForm() {
               ))}
             </div>
           )}
-        </div>
-
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Link
-            href="/dashboard/tickets"
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creando...' : 'Crear Ticket'}
-          </button>
         </div>
       </form>
     </div>

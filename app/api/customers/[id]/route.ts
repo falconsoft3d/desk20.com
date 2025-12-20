@@ -17,6 +17,20 @@ export async function GET(
       )
     }
 
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden ver customers
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
+      )
+    }
+
     const customer = await prisma.user.findUnique({
       where: { 
         id: params.id,
@@ -61,6 +75,20 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
+      )
+    }
+
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden editar customers
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
       )
     }
 
@@ -110,6 +138,20 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
+      )
+    }
+
+    // Obtener usuario con su rol
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email || '' },
+      select: { role: true }
+    })
+
+    // Solo AGENT y ADMIN pueden eliminar customers
+    if (user?.role === 'CUSTOMER') {
+      return NextResponse.json(
+        { error: 'Acceso denegado' },
+        { status: 403 }
       )
     }
 

@@ -22,13 +22,28 @@ export default async function UsersPage({
     redirect('/login')
   }
 
+  // Obtener usuario completo con su rol
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email || '' },
+    select: { id: true, name: true, email: true, role: true }
+  })
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  // Validar que solo ADMIN pueda acceder a esta página
+  if (user.role !== 'ADMIN') {
+    redirect('/dashboard')
+  }
+
   const whereClause: any = {}
   
   if (searchParams.role) {
     whereClause.role = searchParams.role
   }
 
-  const [users, stats] = await Promise.all([
+  const [users, statsResult] = await Promise.all([
     prisma.user.findMany({
       where: whereClause,
       select: {
@@ -55,12 +70,16 @@ export default async function UsersPage({
       prisma.user.count({ where: { role: 'ADMIN' } }),
       prisma.user.count({ where: { role: 'AGENT' } }),
       prisma.user.count({ where: { role: 'CUSTOMER' } }),
+      prisma.ticket.count({ where: { status: 'OPEN' } })
     ])
   ])
 
+  const stats = statsResult
+  const openTicketsCount = statsResult[3]
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar user={session.user} />
+      <Sidebar user={user} openTicketsCount={openTicketsCount} />
       
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">
